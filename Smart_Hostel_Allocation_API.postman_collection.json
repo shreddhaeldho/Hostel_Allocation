@@ -1,0 +1,873 @@
+{
+	"info": {
+		"_postman_id": "a9c72e2d-45f8-4e89-a212-08f37eb20261",
+		"name": "Smart Hostel Room Allocation API",
+		"description": "Comprehensive Postman test collection for Smart Hostel Room Allocation System (Phase 4 Final Integration & Testing).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080/api",
+			"type": "string"
+		},
+		{
+			"key": "studentId1",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "studentId2",
+			"value": "2",
+			"type": "string"
+		},
+		{
+			"key": "roomId1",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "roomId2",
+			"value": "2",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Student Management",
+			"item": [
+				{
+					"name": "Register Student 1 (Single Preference)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Student created with valid ID and attributes\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property(\"id\");",
+									"    pm.expect(jsonData.name).to.eql(\"Dev Sharma\");",
+									"    pm.expect(jsonData.preferredRoomType).to.eql(\"Single\");",
+									"    pm.collectionVariables.set(\"studentId1\", jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Dev Sharma\",\n    \"department\": \"CSE\",\n    \"preferredRoomType\": \"Single\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/students",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students"
+							]
+						}
+					}
+				},
+				{
+					"name": "Register Student 2 (Double Preference)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Student created with valid ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property(\"id\");",
+									"    pm.collectionVariables.set(\"studentId2\", jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Ishaan Verma\",\n    \"department\": \"ECE\",\n    \"preferredRoomType\": \"Double\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/students",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students"
+							]
+						}
+					}
+				},
+				{
+					"name": "Retrieve All Students",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is an array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"array\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/students",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students"
+							]
+						}
+					}
+				},
+				{
+					"name": "Retrieve Student by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Returns correct student object\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql(Number(pm.collectionVariables.get(\"studentId1\")));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/students/{{studentId1}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students",
+								"{{studentId1}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Retrieve Nonexistent Student (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404 Not Found\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Returns structured error message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql(404);",
+									"    pm.expect(jsonData.error).to.eql(\"Not Found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/students/99999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students",
+								"99999"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Room Management",
+			"item": [
+				{
+					"name": "Create Room 1 (Single)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Room created with 0 occupied beds\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.roomType).to.eql(\"Single\");",
+									"    pm.expect(jsonData.capacity).to.eql(1);",
+									"    pm.expect(jsonData.occupiedBeds).to.eql(0);",
+									"    pm.collectionVariables.set(\"roomId1\", jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"roomType\": \"Single\",\n    \"capacity\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/rooms",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rooms"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Room 2 (Double)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Room created with capacity 2 and occupiedBeds 0\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.roomType).to.eql(\"Double\");",
+									"    pm.expect(jsonData.capacity).to.eql(2);",
+									"    pm.expect(jsonData.occupiedBeds).to.eql(0);",
+									"    pm.collectionVariables.set(\"roomId2\", jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"roomType\": \"Double\",\n    \"capacity\": 2\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/rooms",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rooms"
+							]
+						}
+					}
+				},
+				{
+					"name": "Retrieve All Rooms",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Returns array of rooms\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"array\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/rooms",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rooms"
+							]
+						}
+					}
+				},
+				{
+					"name": "Retrieve Room by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Returns room entity matching requested ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.eql(Number(pm.collectionVariables.get(\"roomId1\")));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/rooms/{{roomId1}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rooms",
+								"{{roomId1}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Retrieve Nonexistent Room (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404 Not Found\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/rooms/99999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rooms",
+								"99999"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Room Allocation",
+			"item": [
+				{
+					"name": "Allocate Room for Student 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Allocation response structure is correct\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property(\"allocationId\");",
+									"    pm.expect(jsonData.studentId).to.eql(Number(pm.collectionVariables.get(\"studentId1\")));",
+									"    pm.expect(jsonData.occupiedBeds).to.be.at.least(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations/{{studentId1}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								"{{studentId1}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Allocate Room for Student 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Student 2 successfully allocated to Double room\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.studentId).to.eql(Number(pm.collectionVariables.get(\"studentId2\")));",
+									"    pm.expect(jsonData.roomType).to.eql(\"Double\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations/{{studentId2}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								"{{studentId2}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Retrieve All Allocations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Contains active allocations\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an(\"array\");",
+									"    pm.expect(jsonData.length).to.be.at.least(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations"
+							]
+						}
+					}
+				},
+				{
+					"name": "Prevent Duplicate Allocation (409 Conflict)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 409 Conflict\", function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"pm.test(\"Conflict error message returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql(409);",
+									"    pm.expect(jsonData.message).to.include(\"Student already has an active room allocation\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations/{{studentId1}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								"{{studentId1}}"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Vacating Rooms",
+			"item": [
+				{
+					"name": "Vacate Room for Student 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Room vacated successfully confirmation\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.eql(\"Room vacated successfully\");",
+									"    pm.expect(jsonData.studentId).to.eql(Number(pm.collectionVariables.get(\"studentId1\")));",
+									"    pm.expect(jsonData).to.have.property(\"updatedOccupiedBeds\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations/{{studentId1}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								"{{studentId1}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Attempt to Vacate Again (404 Not Found)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404 Not Found\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations/{{studentId1}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								"{{studentId1}}"
+							]
+						}
+					}
+				},
+				{
+					"name": "Re-allocate Vacated Bed to Student 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 Created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Bed successfully re-claimed\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.studentId).to.eql(Number(pm.collectionVariables.get(\"studentId1\")));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations/{{studentId1}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								"{{studentId1}}"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Error Handling",
+			"item": [
+				{
+					"name": "Register Student - Empty Request Body (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"pm.test(\"Error structure contains 400 status\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{baseUrl}}/students",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students"
+							]
+						}
+					}
+				},
+				{
+					"name": "Register Student - Blank Name (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"pm.test(\"Returns validation error details\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"   \",\n    \"department\": \"CSE\",\n    \"preferredRoomType\": \"Single\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/students",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students"
+							]
+						}
+					}
+				},
+				{
+					"name": "Add Room - Zero Capacity (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"roomType\": \"Single\",\n    \"capacity\": 0\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/rooms",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rooms"
+							]
+						}
+					}
+				},
+				{
+					"name": "Add Room - Negative Occupied Beds (400)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"roomType\": \"Double\",\n    \"capacity\": 2,\n    \"occupiedBeds\": -1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/rooms",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rooms"
+							]
+						}
+					}
+				},
+				{
+					"name": "Allocate Room - Nonexistent Student (404)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404 Not Found\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Error specifies student not found\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.message).to.include(\"Student not found\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/allocations/99999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"allocations",
+								"99999"
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}
