@@ -65,4 +65,34 @@ public class RoomController {
         Room room = roomService.getRoomById(id);
         return ResponseEntity.ok(room);
     }
+
+    /**
+     * Updates an existing room.
+     * PUT /api/rooms/{id}
+     *
+     * @param id Room ID.
+     * @param room Updated Room payload.
+     * @return HTTP 200 OK with updated Room data.
+     */
+    @org.springframework.web.bind.annotation.PutMapping("/{id}")
+    public ResponseEntity<Room> updateRoom(@PathVariable Long id, @Valid @RequestBody Room room) {
+        Room updatedRoom = roomService.updateRoom(id, room);
+        return ResponseEntity.ok(updatedRoom);
+    }
+
+    /**
+     * Deletes a room by ID.
+     * DELETE /api/rooms/{id}
+     *
+     * @param id Room ID.
+     * @return HTTP 200 OK with deletion confirmation.
+     */
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    public ResponseEntity<java.util.Map<String, Object>> deleteRoom(@PathVariable Long id) {
+        roomService.deleteRoom(id);
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", "Room deleted successfully",
+                "roomId", id
+        ));
+    }
 }

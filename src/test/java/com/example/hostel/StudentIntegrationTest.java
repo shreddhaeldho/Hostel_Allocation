@@ -167,20 +167,51 @@ class StudentIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/students - Submit missing/blank preferredRoomType returns 400")
-    void testSubmitBlankPreferredRoomType() throws Exception {
-        String invalidJson = """
+    @DisplayName("PUT /api/students/{id} - Update an existing student")
+    void testUpdateStudent() throws Exception {
+        com.example.hostel.entity.Student student = studentRepository.save(new com.example.hostel.entity.Student("Old Name", "Old Dept", "Single"));
+
+        String updateJson = """
                 {
-                    "name": "Pooja Nair",
-                    "department": "Biotech",
-                    "preferredRoomType": "  "
+                    "name": "New Name",
+                    "department": "New Dept",
+                    "preferredRoomType": "Double"
                 }
                 """;
 
-        mockMvc.perform(post("/api/students")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/students/" + student.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidJson))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
+                        .content(updateJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(student.getId()))
+                .andExpect(jsonPath("$.name").value("New Name"))
+                .andExpect(jsonPath("$.department").value("New Dept"))
+                .andExpect(jsonPath("$.preferredRoomType").value("Double"));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/students/{id} - Delete a student without allocation")
+    void testDeleteStudentSuccess() throws Exception {
+        com.example.hostel.entity.Student student = studentRepository.save(new com.example.hostel.entity.Student("To Delete", "ECE", "Single"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/students/" + student.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Student deleted successfully"))
+                .andExpect(jsonPath("$.studentId").value(student.getId()));
+
+        org.junit.jupiter.api.Assertions.assertFalse(studentRepository.existsById(student.getId()));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/students/{id} - Delete a student with active allocation fails with 409")
+    void testDeleteStudentWithActiveAllocationFails() throws Exception {
+        com.example.hostel.entity.Student student = studentRepository.save(new com.example.hostel.entity.Student("Active", "CSE", "Single"));
+        com.example.hostel.entity.Room room = roomRepository.save(new com.example.hostel.entity.Room("Single", 1));
+        allocationRepository.save(new com.example.hostel.entity.Allocation(student, room));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/students/" + student.getId()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message", containsString("active room allocation")));
     }
 }

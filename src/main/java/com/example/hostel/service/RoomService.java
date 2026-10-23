@@ -14,9 +14,12 @@ import java.util.List;
 public class RoomService {
 
     private final RoomRepository roomRepository;
+    private final com.example.hostel.repository.AllocationRepository allocationRepository;
 
-    public RoomService(RoomRepository roomRepository) {
+    public RoomService(RoomRepository roomRepository,
+                       com.example.hostel.repository.AllocationRepository allocationRepository) {
         this.roomRepository = roomRepository;
+        this.allocationRepository = allocationRepository;
     }
 
     /**
@@ -27,25 +30,52 @@ public class RoomService {
      * @return The persisted room with generated ID.
      */
     public Room addRoom(Room room) {
-        if (room.getRoomType() == null || room.getRoomType().trim().isEmpty()) {
-            throw new IllegalArgumentException("Room type must not be blank");
-        }
-        if (room.getCapacity() == null || room.getCapacity() <= 0) {
-            throw new IllegalArgumentException("Capacity must be greater than zero");
-        }
-        if (room.getOccupiedBeds() != null && room.getOccupiedBeds() < 0) {
-            throw new IllegalArgumentException("Occupied beds must be zero or greater");
-        }
-        if (room.getOccupiedBeds() != null && room.getOccupiedBeds() > room.getCapacity()) {
-            throw new IllegalArgumentException("Occupied beds cannot exceed room capacity");
-        }
-
+        validateRoomInput(room);
         room.setRoomType(room.getRoomType().trim());
 
         // Always initialize occupied beds to 0 for a newly added room
         room.setOccupiedBeds(0);
 
         return roomRepository.save(room);
+    }
+
+    /**
+     * Updates an existing room's roomType or capacity.
+     *
+     * @param id The room ID.
+     * @param updatedRoom Updated room details.
+     * @return Updated room entity.
+     */
+    public Room updateRoom(Long id, Room updatedRoom) {
+        Room existing = getRoomById(id);
+        validateRoomInput(updatedRoom);
+
+        if (updatedRoom.getCapacity() < existing.getOccupiedBeds()) {
+            throw new IllegalArgumentException(
+                    "New capacity (" + updatedRoom.getCapacity() + ") cannot be less than currently occupied beds (" + existing.getOccupiedBeds() + ")"
+            );
+        }
+
+        existing.setRoomType(updatedRoom.getRoomType().trim());
+        existing.setCapacity(updatedRoom.getCapacity());
+
+        return roomRepository.save(existing);
+    }
+
+    /**
+     * Deletes a room by its ID.
+     * A room cannot be deleted if it has occupied beds or active allocations.
+     *
+     * @param id The ID of the room.
+     */
+    public void deleteRoom(Long id) {
+        Room room = getRoomById(id);
+        if (room.getOccupiedBeds() > 0 || allocationRepository.existsByRoomId(id)) {
+            throw new com.example.hostel.exception.AllocationConflictException(
+                    "Cannot delete room with ID " + id + " because it currently has active allocations or occupied beds."
+            );
+        }
+        roomRepository.delete(room);
     }
 
     /**
@@ -67,5 +97,20 @@ public class RoomService {
     public Room getRoomById(Long id) {
         return roomRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + id));
+    }
+
+    private void validateRoomInput(Room room) {
+        if (room.getRoomType() == null || room.getRoomType().trim().isEmpty()) {
+            throw new IllegalArgumentException("Room type must not be blank");
+        }
+        if (room.getCapacity() == null || room.getCapacity() <= 0) {
+            throw new IllegalArgumentException("Capacity must be greater than zero");
+        }
+        if (room.getOccupiedBeds() != null && room.getOccupiedBeds() < 0) {
+            throw new IllegalArgumentException("Occupied beds must be zero or greater");
+        }
+        if (room.getOccupiedBeds() != null && room.getOccupiedBeds() > room.getCapacity()) {
+            throw new IllegalArgumentException("Occupied beds cannot exceed room capacity");
+        }
     }
 }

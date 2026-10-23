@@ -26,4 +26,12 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT r FROM Room r WHERE r.id = :id")
     Optional<Room> findByIdWithLock(@Param("id") Long id);
+
+    /**
+     * Finds candidate rooms matching room type with available beds, sorted by most free beds first,
+     * locked with PESSIMISTIC_WRITE to prevent concurrent over-allocation.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM Room r WHERE LOWER(TRIM(r.roomType)) = LOWER(TRIM(:roomType)) AND r.occupiedBeds < r.capacity ORDER BY (r.capacity - r.occupiedBeds) DESC, r.id ASC")
+    java.util.List<Room> findEligibleRoomsWithLock(@Param("roomType") String roomType);
 }

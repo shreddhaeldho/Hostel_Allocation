@@ -146,61 +146,91 @@ erDiagram
 
 ---
 
-## 6. Setup & Installation
+## 6. Setup & Quickstart Guide (VS Code Terminal)
+
+You can clone, install, and execute this entire project directly inside **VS Code** with simple terminal commands.
 
 ### Prerequisites
-1. **Java Development Kit (JDK 21 LTS)** installed and configured.
-   Verify with:
-   ```powershell
-   java -version
-   ```
-2. **MySQL Server 8.0+** running as a service (e.g. `MySQL80`).
-3. **Database Setup**:
-   Log into MySQL and verify or create the database:
-   ```sql
-   CREATE DATABASE IF NOT EXISTS hostel_db;
-   ```
-
-### Database Credentials Configuration
-In `src/main/resources/application.properties`, the application is configured to read the database password securely from the environment variable `DB_PASSWORD`:
-
-```properties
-spring.application.name=hostel-allocation
-
-spring.datasource.url=jdbc:mysql://localhost:3306/hostel_db
-spring.datasource.username=root
-spring.datasource.password=${DB_PASSWORD}
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.open-in-view=false
-
-server.port=8080
-```
-
-Set the environment variable in your terminal (replace `your_password` with your MySQL root password):
-```powershell
-$env:DB_PASSWORD="your_password"
-```
+- **Java 21 LTS**: Verify in VS Code terminal:
+  ```bash
+  java -version
+  ```
+- **Python 3**: (Optional, for the interactive terminal console):
+  ```bash
+  python3 --version
+  ```
+- **Maven**: Pre-packaged via the included Maven Wrapper (`./mvnw` or `mvnw.cmd`).
 
 ---
 
-## 7. Build, Test, and Run Instructions
+### Running in VS Code (Step-by-Step)
 
-### Step 1: Run Automated Tests
-Execute the comprehensive test suite (29 tests including concurrency and edge case validations running on an isolated in-memory test database):
-```powershell
+#### Step 1: Open Terminal in VS Code
+Open VS Code in this project folder and launch an integrated terminal (`Ctrl + ~` or `Terminal -> New Terminal`).
+
+#### Step 2: Run Automated Tests
+Verify that all business rules, race condition protections, and endpoints compile and pass:
+```bash
+./mvnw clean test
+# on Windows Command Prompt / PowerShell:
 .\mvnw.cmd clean test
 ```
 
-### Step 2: Start the Application
-Boot up the Spring Boot server connected to MySQL `hostel_db`:
-```powershell
+#### Step 3: Start the Backend Server
+Start the Spring Boot backend service:
+```bash
+./mvnw spring-boot:run
+# on Windows Command Prompt / PowerShell:
 .\mvnw.cmd spring-boot:run
 ```
-
-Once started, the server will be available at:
+Once the log prints `Started HostelAllocationApplication in ... seconds`, the backend is live at:
 `http://localhost:8080/`
+
+#### Step 4: Open a Second Terminal for the Interactive CLI
+Click the `+` button in the VS Code terminal toolbar to split or open a second terminal tab and run:
+```bash
+python3 cli.py
+```
+This launches the interactive system:
+- **Admin Portal**: Add rooms, view bed occupancy in real-time, inspect allocations, or check out students.
+- **Student Portal**: Fill out an interactive questionnaire (name, department, preferred room type) and automatically receive a smartly allocated room bed.
+
+---
+
+## 7. System Workflow & Business Logic
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin
+    actor Student
+    participant CLI as Terminal / Postman
+    participant Spring as Spring Boot Backend
+    participant DB as Database (H2 / MySQL)
+
+    Admin->>CLI: 1. Add Room (e.g., Double, Capacity: 2)
+    CLI->>Spring: POST /api/rooms
+    Spring->>DB: Save room (occupied_beds = 0)
+    Spring-->>CLI: 201 Created (Room #1)
+
+    Student->>CLI: 2. Register (Name: "Alex", Dept: "CSE", Type: "Double")
+    CLI->>Spring: POST /api/students
+    Spring->>DB: Save student
+    Spring-->>CLI: 201 Created (Student #1)
+
+    Student->>CLI: 3. Request Allocation (studentId: 1)
+    CLI->>Spring: POST /api/allocations/1
+    Spring->>DB: Check if student already has active allocation
+    Spring->>DB: Query eligible rooms with SELECT ... FOR UPDATE
+    Spring->>DB: Pick room with most free beds (Room #1)
+    Spring->>DB: Increment occupied_beds to 1 & Save Allocation
+    Spring-->>CLI: 201 Created (Allocated to Room #1)
+
+    Admin->>CLI: 4. Vacate Room (studentId: 1)
+    CLI->>Spring: DELETE /api/allocations/1
+    Spring->>DB: Decrement occupied_beds to 0 & Delete Allocation
+    Spring-->>CLI: 200 OK (Room Vacated, Bed Reclaimed)
+```
 
 ---
 
@@ -209,6 +239,14 @@ Once started, the server will be available at:
 **Base URL**: `http://localhost:8080/api`
 
 ### 1. Student Management Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/students` | Register a new student |
+| `GET` | `/api/students` | Retrieve all registered students |
+| `GET` | `/api/students/{id}` | Retrieve student by ID |
+| `PUT` | `/api/students/{id}` | Update student details |
+| `DELETE` | `/api/students/{id}` | Delete student (blocked if active allocation exists) |
 
 #### Register Student
 - **Method**: `POST`
@@ -222,38 +260,36 @@ Once started, the server will be available at:
   }
   ```
 - **Response**: `201 Created`
+
+#### Update Student
+- **Method**: `PUT`
+- **URL**: `http://localhost:8080/api/students/{id}`
+- **Request Body**:
   ```json
   {
-      "id": 1,
       "name": "Ananya Sharma",
-      "department": "Computer Science",
-      "preferredRoomType": "Double"
+      "department": "AI & Data Science",
+      "preferredRoomType": "Single"
   }
   ```
-
-#### Retrieve All Students
-- **Method**: `GET`
-- **URL**: `http://localhost:8080/api/students`
 - **Response**: `200 OK`
-  ```json
-  [
-      {
-          "id": 1,
-          "name": "Ananya Sharma",
-          "department": "Computer Science",
-          "preferredRoomType": "Double"
-      }
-  ]
-  ```
 
-#### Retrieve Student by ID
-- **Method**: `GET`
+#### Delete Student
+- **Method**: `DELETE`
 - **URL**: `http://localhost:8080/api/students/{id}`
-- **Response**: `200 OK` (or `404 Not Found`)
+- **Response**: `200 OK` (or `409 Conflict` if student has an active room allocation)
 
 ---
 
 ### 2. Room Management Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/rooms` | Add a new hostel room |
+| `GET` | `/api/rooms` | Retrieve all rooms |
+| `GET` | `/api/rooms/{id}` | Retrieve room by ID |
+| `PUT` | `/api/rooms/{id}` | Update room type or capacity |
+| `DELETE` | `/api/rooms/{id}` | Delete room (blocked if occupied) |
 
 #### Add Hostel Room
 - **Method**: `POST`
@@ -266,14 +302,23 @@ Once started, the server will be available at:
   }
   ```
 - **Response**: `201 Created`
+
+#### Update Room
+- **Method**: `PUT`
+- **URL**: `http://localhost:8080/api/rooms/{id}`
+- **Request Body**:
   ```json
   {
-      "id": 1,
       "roomType": "Double",
-      "capacity": 2,
-      "occupiedBeds": 0
+      "capacity": 3
   }
   ```
+- **Response**: `200 OK`
+
+#### Delete Room
+- **Method**: `DELETE`
+- **URL**: `http://localhost:8080/api/rooms/{id}`
+- **Response**: `200 OK` (or `409 Conflict` if room has occupants)
 
 #### Retrieve All Rooms
 - **Method**: `GET`

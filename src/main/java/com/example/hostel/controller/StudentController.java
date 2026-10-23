@@ -65,4 +65,34 @@ public class StudentController {
         Student student = studentService.getStudentById(id);
         return ResponseEntity.ok(student);
     }
+
+    /**
+     * Updates an existing student.
+     * PUT /api/students/{id}
+     *
+     * @param id Student ID.
+     * @param student Updated Student payload.
+     * @return HTTP 200 OK with updated Student data.
+     */
+    @org.springframework.web.bind.annotation.PutMapping("/{id}")
+    public ResponseEntity<Student> updateStudent(@PathVariable Long id, @Valid @RequestBody Student student) {
+        Student updatedStudent = studentService.updateStudent(id, student);
+        return ResponseEntity.ok(updatedStudent);
+    }
+
+    /**
+     * Deletes a student by ID.
+     * DELETE /api/students/{id}
+     *
+     * @param id Student ID.
+     * @return HTTP 200 OK with deletion confirmation.
+     */
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    public ResponseEntity<java.util.Map<String, Object>> deleteStudent(@PathVariable Long id) {
+        studentService.deleteStudent(id);
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", "Student deleted successfully",
+                "studentId", id
+        ));
+    }
 }

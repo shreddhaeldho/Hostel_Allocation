@@ -225,6 +225,49 @@
 							]
 						}
 					}
+				},
+				{
+					"name": "Update Student Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Student updated with new department\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.department).to.eql(\"AI & Data Science\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Dev Sharma\",\n    \"department\": \"AI & Data Science\",\n    \"preferredRoomType\": \"Single\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/students/{{studentId1}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"students",
+								"{{studentId1}}"
+							]
+						}
+					}
 				}
 			]
 		},
@@ -414,6 +457,49 @@
 							"path": [
 								"rooms",
 								"99999"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Room Capacity",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Room updated with new capacity\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.capacity).to.eql(3);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"roomType\": \"Double\",\n    \"capacity\": 3\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/rooms/{{roomId2}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"rooms",
+								"{{roomId2}}"
 							]
 						}
 					}

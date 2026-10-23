@@ -195,19 +195,49 @@ class RoomIntegrationTest {
     }
 
     @Test
-    @DisplayName("POST /api/rooms - Blank room type is rejected with 400 Bad Request")
-    void testRejectBlankRoomType() throws Exception {
-        String invalidJson = """
+    @DisplayName("PUT /api/rooms/{id} - Update room details")
+    void testUpdateRoom() throws Exception {
+        com.example.hostel.entity.Room room = roomRepository.save(new com.example.hostel.entity.Room("Single", 1));
+
+        String updateJson = """
                 {
-                    "roomType": "   ",
+                    "roomType": "Double",
                     "capacity": 2
                 }
                 """;
 
-        mockMvc.perform(post("/api/rooms")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/rooms/" + room.getId())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(invalidJson))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
+                        .content(updateJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(room.getId()))
+                .andExpect(jsonPath("$.roomType").value("Double"))
+                .andExpect(jsonPath("$.capacity").value(2));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/rooms/{id} - Delete an empty room")
+    void testDeleteEmptyRoomSuccess() throws Exception {
+        com.example.hostel.entity.Room room = roomRepository.save(new com.example.hostel.entity.Room("Single", 1));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/rooms/" + room.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Room deleted successfully"))
+                .andExpect(jsonPath("$.roomId").value(room.getId()));
+
+        org.junit.jupiter.api.Assertions.assertFalse(roomRepository.existsById(room.getId()));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/rooms/{id} - Delete room with active occupants fails with 409")
+    void testDeleteOccupiedRoomFails() throws Exception {
+        com.example.hostel.entity.Room room = roomRepository.save(new com.example.hostel.entity.Room("Single", 1));
+        room.setOccupiedBeds(1);
+        roomRepository.save(room);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/rooms/" + room.getId()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message", containsString("active allocations or occupied beds")));
     }
 }

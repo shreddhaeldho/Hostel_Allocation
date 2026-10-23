@@ -58,49 +58,25 @@ public class AllocationService {
             throw new AllocationConflictException("Student already has an active room allocation.");
         }
 
-        // Step 3: Find candidate eligible rooms matching student's preferred room type
+        // Step 3: Find candidate eligible rooms matching student's preferred room type with pessimistic lock
         String preferredType = student.getPreferredRoomType() != null ? student.getPreferredRoomType().trim() : "";
 
-        List<Room> allRooms = roomRepository.findAll();
-
-        List<Room> eligibleRooms = allRooms.stream()
-                // Match preferred room type (case-insensitive & trimmed)
-                .filter(room -> room.getRoomType() != null && room.getRoomType().trim().equalsIgnoreCase(preferredType))
-                // Ensure room has available capacity (occupiedBeds < capacity)
-                .filter(room -> room.getOccupiedBeds() < room.getCapacity())
-                // Step 4: Sort by most available beds first, tie-break by lowest room ID
-                .sorted(Comparator
-                        .comparingInt((Room r) -> r.getCapacity() - r.getOccupiedBeds()).reversed()
-                        .thenComparing(Room::getId)
-                )
-                .toList();
+        List<Room> eligibleRooms = roomRepository.findEligibleRoomsWithLock(preferredType);
 
         if (eligibleRooms.isEmpty()) {
             throw new AllocationConflictException("No available room matches the student's preferred room type: " + preferredType);
         }
 
-        // Step 5: Acquire pessimistic write lock and refresh room capacity directly from DB
-        Room selectedRoom = null;
-        for (Room candidate : eligibleRooms) {
-            entityManager.refresh(candidate, LockModeType.PESSIMISTIC_WRITE);
-            if (candidate.getOccupiedBeds() < candidate.getCapacity()) {
-                selectedRoom = candidate;
-                break;
-            }
-        }
+        Room selectedRoom = eligibleRooms.get(0);
 
-        if (selectedRoom == null) {
-            throw new AllocationConflictException("No available room matches the student's preferred room type: " + preferredType);
-        }
-
-        // Step 6: Update room occupancy and save allocation record
+        // Step 4: Update room occupancy and save allocation record
         selectedRoom.setOccupiedBeds(selectedRoom.getOccupiedBeds() + 1);
         roomRepository.saveAndFlush(selectedRoom);
 
         Allocation allocation = new Allocation(student, selectedRoom);
         Allocation savedAllocation = allocationRepository.saveAndFlush(allocation);
 
-        // Step 7: Return DTO response
+        // Step 5: Return DTO response
         return AllocationResponse.fromEntity(savedAllocation);
     }
 

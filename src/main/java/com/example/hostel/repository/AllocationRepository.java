@@ -29,6 +29,14 @@ public interface AllocationRepository extends JpaRepository<Allocation, Long> {
     boolean existsByStudentId(Long studentId);
 
     /**
+     * Checks if an active allocation exists for a given room ID.
+     *
+     * @param roomId ID of the room.
+     * @return true if allocation exists, false otherwise.
+     */
+    boolean existsByRoomId(Long roomId);
+
+    /**
      * Deletes the allocation record for a given student ID.
      *
      * @param studentId ID of the student.
